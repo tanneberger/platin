@@ -148,17 +148,6 @@ class Architecture < PML::Architecture
     ExtractSymbols.run(cmd, extractor, pml, options)
   end
 
-
-
-# found out through measuring nops
-# every 16 instructions cycles jump by 4620
-# probably due to fetching new cacheline from flash
-# -> 4620 cycles for 32 byte => 144.375 cycles/byte
-# one instruction usually 32 bit => takes 577.5 cycles to fetch one instruction from flash
-# (same number again if a 32bit value is stored or loaded)
-  FLASH_WAIT_CYCLES = 578
-  CACHE_ACCESS = 1
-
   def path_wcet(ilist)
 	cost = ilist.reduce(0) do |cycles, instr|
       cycles = cycles + cycle_cost(instr) + 1 #FLASH_WAIT_CYCLES # access instructions
@@ -175,24 +164,13 @@ class Architecture < PML::Architecture
   def lib_cycle_cost(func) 
     #binding.pry
 	case func
-	when "__mulsi3"
-		1
-	when "__divsi3"
-		1
-	when "__udivsi3"
-		1
-	when "__umodsi3"
-		1
-	when "__modsi3"
+	when "__mulsi3", "__divsi3", "__udivsi3", "__umodsi3", "__modsi3"
 		1
 	else
 		die("Unknown library function: #{func}")
 	end
   end
 
-  NUM_REGISTERS = 10
-  PIPELINE_REFILL = 3
-  PIPELINE_FLUSH = 5
   def cycle_cost(instr)
   # all info from: https://sifive.cdn.prismic.io/sifive%2F4d063bf8-3ae6-4db6-9843-ee9076ebadf7_fe310-g000.pdf
 	case instr.opcode
